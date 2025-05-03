@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 const serverless = require('serverless-http');
+const { v4: uuidv4 } = require('uuid');
 
 dotenv.config();
 
@@ -45,6 +46,15 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+const JOBS_FILE = path.join(__dirname, 'transcribe-jobs.json');
+function readJobs() {
+  if (!fs.existsSync(JOBS_FILE)) return {};
+  return JSON.parse(fs.readFileSync(JOBS_FILE, 'utf8'));
+}
+function writeJobs(jobs) {
+  fs.writeFileSync(JOBS_FILE, JSON.stringify(jobs, null, 2));
+}
+
 app.get('/api/hello', (req, res) => res.json({ msg: 'Hello from Express!' }));
 
 app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
@@ -52,20 +62,41 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "No audio file uploaded" });
     }
-    console.log("File received:", req.file.path);
-    const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(req.file.path),
-      model: "whisper-1",
-    });
-    console.log("Transcription completed");
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error("Error deleting file:", err);
-    });
-    res.json({ transcript: transcription.text });
+    const jobId = uuidv4();
+    let jobs = readJobs();
+    jobs[jobId] = { status: 'processing' };
+    writeJobs(jobs);
+    res.json({ jobId });
+    // Start background transcription
+    (async () => {
+      try {
+        const transcription = await openai.audio.transcriptions.create({
+          file: fs.createReadStream(req.file.path),
+          model: "whisper-1",
+        });
+        jobs = readJobs();
+        jobs[jobId] = { status: 'done', transcript: transcription.text };
+        writeJobs(jobs);
+      } catch (error) {
+        jobs = readJobs();
+        jobs[jobId] = { status: 'error', error: error.message };
+        writeJobs(jobs);
+      } finally {
+        fs.unlink(req.file.path, () => {});
+      }
+    })();
   } catch (error) {
-    console.error("Error in transcription:", error);
     res.status(500).json({ error: error.message });
   }
+});
+
+app.get('/api/transcribe/status', (req, res) => {
+  const { id } = req.query;
+  const jobs = readJobs();
+  if (!id || !jobs[id]) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+  res.json(jobs[id]);
 });
 
 app.post('/api/summarize', async (req, res) => {

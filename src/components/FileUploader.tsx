@@ -29,39 +29,30 @@ const FileUploader = ({ onFileUpload, isLoading }: FileUploaderProps) => {
     setIsDragging(false);
   };
 
-  const validateFile = (file: File) => {
-    const validTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/ogg'];
-    if (!validTypes.includes(file.type)) {
-      toast.error("Please upload a valid audio file");
-      return false;
+  // File size limit in bytes (10MB)
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File too large. Max size is 10MB.');
+      return;
     }
-    if (file.size > 25 * 1024 * 1024) { // 25MB limit
-      toast.error("File size exceeds 25MB limit");
-      return false;
-    }
-    return true;
+    onFileUpload(file);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      if (validateFile(file)) {
-        onFileUpload(file);
-      }
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File too large. Max size is 10MB.');
+      return;
     }
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      if (validateFile(file)) {
-        onFileUpload(file);
-      }
-    }
+    onFileUpload(file);
   };
 
   const handleButtonClick = () => {
@@ -95,7 +86,7 @@ const FileUploader = ({ onFileUpload, isLoading }: FileUploaderProps) => {
         disabled={isLoading}
       />
       <p className="text-xs text-gray-500 mt-4">
-        Supported formats: WAV, MP3, MP4, M4A, OGG (max 25MB)
+        Supported formats: WAV, MP3, MP4, M4A, OGG (max 10MB)
       </p>
     </div>
   );
