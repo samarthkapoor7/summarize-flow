@@ -5,7 +5,6 @@ const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
-const serverless = require('serverless-http');
 
 dotenv.config();
 
@@ -103,4 +102,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
 });
 
-module.exports = serverless(app);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Local backend listening at http://localhost:${port}`);
+});
