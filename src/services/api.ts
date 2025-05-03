@@ -35,34 +35,39 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
 
 export const generateSummary = async (transcript: string): Promise<string> => {
   try {
-    // Limit the transcript length to avoid backend timeouts
-    const MAX_TOKENS = 750; // Lowered for Vercel reliability
-    let limitedTranscript = transcript;
-    if (transcript.length > MAX_TOKENS) {
-      throw new Error('Audio too long for summary. Please upload a shorter file.');
-    }
-    const response = await fetch(`${API_BASE_URL}/summarize`, {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OpenAI API key not found.');
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ transcript: limitedTranscript }),
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that summarizes text. Create a concise summary of the following transcript.'
+          },
+          {
+            role: 'user',
+            content: transcript
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 500
+      })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      let errorMsg = 'Failed to generate summary';
-      try {
-        const errorData = JSON.parse(errorText);
-        errorMsg = errorData.error || errorMsg;
-      } catch {
-        errorMsg = errorText || errorMsg;
-      }
-      throw new Error(errorMsg);
+      throw new Error(errorText || 'Failed to generate summary');
     }
 
     const data = await response.json();
-    return data.summary;
+    return data.choices[0].message.content;
   } catch (error) {
     console.error('Summary generation error:', error);
     throw error;
