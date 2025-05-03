@@ -36,10 +36,10 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
 export const generateSummary = async (transcript: string): Promise<string> => {
   try {
     // Limit the transcript length to avoid backend timeouts
-    const MAX_TOKENS = 2000; // Roughly ~1500 words, adjust as needed
+    const MAX_TOKENS = 750; // Lowered for Vercel reliability
     let limitedTranscript = transcript;
     if (transcript.length > MAX_TOKENS) {
-      limitedTranscript = transcript.slice(0, MAX_TOKENS) + '\n... [truncated]';
+      throw new Error('Audio too long for summary. Please upload a shorter file.');
     }
     const response = await fetch(`${API_BASE_URL}/summarize`, {
       method: 'POST',
