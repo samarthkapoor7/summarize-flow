@@ -35,16 +35,21 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
 
 export const generateSummary = async (transcript: string): Promise<string> => {
   try {
+    // Limit the transcript length to avoid backend timeouts
+    const MAX_TOKENS = 2000; // Roughly ~1500 words, adjust as needed
+    let limitedTranscript = transcript;
+    if (transcript.length > MAX_TOKENS) {
+      limitedTranscript = transcript.slice(0, MAX_TOKENS) + '\n... [truncated]';
+    }
     const response = await fetch(`${API_BASE_URL}/summarize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ transcript }),
+      body: JSON.stringify({ transcript: limitedTranscript }),
     });
 
     if (!response.ok) {
-      // Read the response body as text once, then try to parse as JSON
       const errorText = await response.text();
       let errorMsg = 'Failed to generate summary';
       try {
