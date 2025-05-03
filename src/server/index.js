@@ -119,5 +119,5 @@ app.use((err, req, res, next) => {
 //   console.log(`Server running at http://localhost:${port}`);
 // });
 
-// Export the serverless handler
-export const handler = serverless(app);
+export default serverless(app);
+
