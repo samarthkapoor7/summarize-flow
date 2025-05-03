@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     { "src": "api/index.cjs", "use": "@vercel/node" },
-    { "src": "src/main.tsx", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
+    { "src": "package.json", "use": "@vercel/static-build" }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "api/index.cjs" },
