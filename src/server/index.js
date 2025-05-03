@@ -1,4 +1,3 @@
-
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
@@ -6,6 +5,7 @@ const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const serverless = require('serverless-http');
 
 dotenv.config();
 
@@ -114,6 +114,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+// Commented out for serverless deployment
+// app.listen(port, () => {
+//   console.log(`Server running at http://localhost:${port}`);
+// });
+
+// Export the serverless handler
+export const handler = serverless(app);

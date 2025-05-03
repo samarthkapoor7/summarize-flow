@@ -1,7 +1,6 @@
-
 // API service for communicating with the backend
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = '/api';
 
 export const transcribeAudio = async (audioFile: File): Promise<string> => {
   try {
