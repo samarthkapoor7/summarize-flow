@@ -114,10 +114,10 @@ app.get('/api/transcribe/status', (req, res) => {
 app.post('/api/summarize', async (req, res) => {
   try {
     const { transcript } = req.body;
-    if (!transcript) {
-      return res.status(400).json({ error: "No transcript provided" });
+    if (!transcript || transcript.length > 750) {
+      return res.status(400).json({ error: "Transcript too long. Please upload a shorter file." });
     }
-    console.log("Generating summary for transcript");
+
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -133,11 +133,11 @@ app.post('/api/summarize', async (req, res) => {
       temperature: 0.5,
       max_tokens: 500
     });
-    console.log("Summary generated");
+
     res.json({ summary: response.choices[0].message.content });
   } catch (error) {
     console.error("Error generating summary:", error);
-    res.status(500).json({ error: error.message, stack: error.stack, full:error });
+    res.status(500).json({ error: error.message, stack: error.stack, full: error });
   }
 });
 

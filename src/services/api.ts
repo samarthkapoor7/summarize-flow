@@ -1,4 +1,3 @@
-const API_BASE_URL = '/api';
 
 export const transcribeAudio = async (audioFile: File): Promise<string> => {
   try {
