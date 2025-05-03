@@ -137,7 +137,7 @@ app.post('/api/summarize', async (req, res) => {
     res.json({ summary: response.choices[0].message.content });
   } catch (error) {
     console.error("Error generating summary:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message, stack: error.stack, full:error });
   }
 });
 
