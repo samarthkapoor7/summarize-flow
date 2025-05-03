@@ -89,14 +89,16 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
         writeJobs(jobs);
       } catch (error) {
         jobs = readJobs();
-        jobs[jobId] = { status: 'error', error: error.message };
+        jobs[jobId] = { status: 'error', error: error.message, stack: error.stack };
         writeJobs(jobs);
+        console.error('Transcription error:', error);
       } finally {
         fs.unlink(req.file.path, () => {});
       }
     })();
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('API error:', error);
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 
