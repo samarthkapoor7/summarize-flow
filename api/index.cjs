@@ -16,13 +16,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const UPLOAD_DIR = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, 'uploads');
+const JOBS_FILE = process.env.VERCEL ? '/tmp/transcribe-jobs.json' : path.join(__dirname, 'transcribe-jobs.json');
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)){
-        fs.mkdirSync(uploadDir, { recursive: true });
+    if (!fs.existsSync(UPLOAD_DIR)){
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
     }
-    cb(null, uploadDir);
+    cb(null, UPLOAD_DIR);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + '-' + file.originalname);
@@ -46,13 +48,21 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-const JOBS_FILE = path.join(__dirname, 'transcribe-jobs.json');
 function readJobs() {
   if (!fs.existsSync(JOBS_FILE)) return {};
-  return JSON.parse(fs.readFileSync(JOBS_FILE, 'utf8'));
+  try {
+    return JSON.parse(fs.readFileSync(JOBS_FILE, 'utf8'));
+  } catch (e) {
+    console.error('Failed to read jobs file:', e);
+    return {};
+  }
 }
 function writeJobs(jobs) {
-  fs.writeFileSync(JOBS_FILE, JSON.stringify(jobs, null, 2));
+  try {
+    fs.writeFileSync(JOBS_FILE, JSON.stringify(jobs, null, 2));
+  } catch (e) {
+    console.error('Failed to write jobs file:', e);
+  }
 }
 
 app.get('/api/hello', (req, res) => res.json({ msg: 'Hello from Express!' }));
