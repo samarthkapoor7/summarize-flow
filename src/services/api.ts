@@ -1,4 +1,3 @@
-
 const API_BASE_URL = '/api';
 
 export const transcribeAudio = async (audioFile: File): Promise<string> => {
@@ -12,13 +11,13 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
     });
 
     if (!response.ok) {
-      // Try to parse JSON, but fallback to text if not valid JSON
+      // Read the response body as text once, then try to parse as JSON
+      const errorText = await response.text();
       let errorMsg = 'Failed to transcribe audio';
       try {
-        const errorData = await response.json();
+        const errorData = JSON.parse(errorText);
         errorMsg = errorData.error || errorMsg;
-      } catch (jsonErr) {
-        const errorText = await response.text();
+      } catch {
         errorMsg = errorText || errorMsg;
       }
       throw new Error(errorMsg);
@@ -43,13 +42,13 @@ export const generateSummary = async (transcript: string): Promise<string> => {
     });
 
     if (!response.ok) {
-      // Try to parse JSON, but fallback to text if not valid JSON
+      // Read the response body as text once, then try to parse as JSON
+      const errorText = await response.text();
       let errorMsg = 'Failed to generate summary';
       try {
-        const errorData = await response.json();
+        const errorData = JSON.parse(errorText);
         errorMsg = errorData.error || errorMsg;
-      } catch (jsonErr) {
-        const errorText = await response.text();
+      } catch {
         errorMsg = errorText || errorMsg;
       }
       throw new Error(errorMsg);
