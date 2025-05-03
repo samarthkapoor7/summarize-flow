@@ -1,4 +1,3 @@
-// API service for communicating with the backend
 
 const API_BASE_URL = '/api';
 
@@ -13,8 +12,16 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to transcribe audio');
+      // Try to parse JSON, but fallback to text if not valid JSON
+      let errorMsg = 'Failed to transcribe audio';
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.error || errorMsg;
+      } catch (jsonErr) {
+        const errorText = await response.text();
+        errorMsg = errorText || errorMsg;
+      }
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
@@ -36,8 +43,16 @@ export const generateSummary = async (transcript: string): Promise<string> => {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to generate summary');
+      // Try to parse JSON, but fallback to text if not valid JSON
+      let errorMsg = 'Failed to generate summary';
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.error || errorMsg;
+      } catch (jsonErr) {
+        const errorText = await response.text();
+        errorMsg = errorText || errorMsg;
+      }
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
