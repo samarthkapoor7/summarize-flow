@@ -1,49 +1,32 @@
 const API_BASE_URL = '/api';
 
 export const transcribeAudio = async (audioFile: File): Promise<string> => {
-  // Enqueue transcription job
   try {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OpenAI API key not found. Please set VITE_OPENAI_API_KEY in your .env file.');
     const formData = new FormData();
-    formData.append('audio', audioFile);
-    // Step 1: Submit audio, get jobId
-    const response = await fetch(`${API_BASE_URL}/transcribe`, {
+    formData.append('file', audioFile);
+    formData.append('model', 'whisper-1');
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: formData
     });
     if (!response.ok) {
       const errorText = await response.text();
-      let errorMsg = 'Failed to start transcription';
+      let errorMsg = 'Failed to transcribe audio';
       try {
         const errorData = JSON.parse(errorText);
-        errorMsg = errorData.error || errorMsg;
+        errorMsg = errorData.error?.message || errorMsg;
       } catch {
         errorMsg = errorText || errorMsg;
       }
       throw new Error(errorMsg);
     }
-    const { jobId } = await response.json();
-    // Step 2: Poll for job status
-    let status = 'processing';
-    let transcript = '';
-    let error = '';
-    for (let i = 0; i < 60; i++) { // up to 60s
-      await new Promise(res => setTimeout(res, 1000));
-      const pollRes = await fetch(`${API_BASE_URL}/transcribe/status?id=${jobId}`);
-      if (!pollRes.ok) continue;
-      const result = await pollRes.json();
-      status = result.status;
-      if (status === 'done') {
-        transcript = result.transcript;
-        break;
-      }
-      if (status === 'error') {
-        error = result.error;
-        break;
-      }
-    }
-    if (status === 'done') return transcript;
-    if (status === 'error') throw new Error(error || 'Transcription failed');
-    throw new Error('Transcription timed out');
+    const data = await response.json();
+    return data.text;
   } catch (error) {
     console.error('Transcription error:', error);
     throw error;
